@@ -1,1 +1,195 @@
-p
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pomodoro Timer</title>
+    <!-- Tailwind CSS for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Tone.js for audio notification -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.7.77/Tone.min.js"></script>
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        /* Using Inter as the default font */
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        /* Custom transition for smooth color changes */
+        .transition-bg {
+            transition: background-color 0.5s ease;
+        }
+    </style>
+</head>
+<body id="app-body" class="bg-gray-900 text-white flex items-center justify-center min-h-screen transition-bg">
+
+    <div class="max-w-md w-full mx-auto p-6 md:p-8 bg-gray-800 bg-opacity-50 rounded-2xl shadow-2xl backdrop-blur-lg border border-gray-700">
+        <h1 class="text-3xl font-bold text-center mb-2">Pomodoro Timer</h1>
+        <p id="mode-indicator" class="text-center text-lg text-gray-400 mb-6">Time to Focus!</p>
+
+        <!-- Timer Mode Selection -->
+        <div class="flex justify-center space-x-2 mb-8 bg-gray-900 p-2 rounded-xl">
+            <button id="pomodoro-btn" class="mode-btn bg-red-500 text-white w-full py-2 px-4 rounded-lg font-semibold shadow-md focus:outline-none focus:ring-2 focus:ring-red-400 focus:ring-opacity-75">Pomodoro</button>
+            <button id="short-break-btn" class="mode-btn w-full py-2 px-4 rounded-lg font-semibold focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-opacity-75">Short Break</button>
+            <button id="long-break-btn" class="mode-btn w-full py-2 px-4 rounded-lg font-semibold focus:outline-none focus:ring-2 focus:ring-green-400 focus:ring-opacity-75">Long Break</button>
+        </div>
+
+        <!-- Timer Display -->
+        <div class="text-center mb-8">
+            <p id="timer-display" class="text-8xl md:text-9xl font-extrabold tracking-tighter">25:00</p>
+        </div>
+
+        <!-- Control Buttons -->
+        <div class="flex justify-center space-x-4">
+            <button id="start-btn" class="w-32 py-3 px-6 bg-green-600 hover:bg-green-700 rounded-lg text-lg font-bold shadow-lg transition transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-green-500">START</button>
+            <button id="pause-btn" class="w-32 py-3 px-6 bg-yellow-500 hover:bg-yellow-600 rounded-lg text-lg font-bold shadow-lg transition transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-yellow-400">PAUSE</button>
+            <button id="reset-btn" class="w-32 py-3 px-6 bg-red-600 hover:bg-red-700 rounded-lg text-lg font-bold shadow-lg transition transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-red-500">RESET</button>
+        </div>
+    </div>
+
+    <script>
+        // DOM Elements
+        const timerDisplay = document.getElementById('timer-display');
+        const modeIndicator = document.getElementById('mode-indicator');
+        const appBody = document.getElementById('app-body');
+        const pomodoroBtn = document.getElementById('pomodoro-btn');
+        const shortBreakBtn = document.getElementById('short-break-btn');
+        const longBreakBtn = document.getElementById('long-break-btn');
+        const startBtn = document.getElementById('start-btn');
+        const pauseBtn = document.getElementById('pause-btn');
+        const resetBtn = document.getElementById('reset-btn');
+
+        // Timer Settings
+        const modes = {
+            pomodoro: { time: 25 * 60, name: 'pomodoro', color: 'bg-red-500', bodyColor: 'bg-gray-900', indicator: 'Time to Focus!' },
+            shortBreak: { time: 5 * 60, name: 'shortBreak', color: 'bg-blue-500', bodyColor: 'bg-blue-900', indicator: 'Time for a Short Break!' },
+            longBreak: { time: 15 * 60, name: 'longBreak', color: 'bg-green-500', bodyColor: 'bg-green-900', indicator: 'Time for a Long Break!' }
+        };
+
+        // State Variables
+        let timerId = null;
+        let timeRemaining = modes.pomodoro.time;
+        let currentMode = 'pomodoro';
+        let isRunning = false;
+        let pomodoroCount = 0;
+
+        // --- Core Functions ---
+
+        // Updates the timer display (MM:SS) and the page title
+        function updateDisplay() {
+            const minutes = Math.floor(timeRemaining / 60);
+            const seconds = timeRemaining % 60;
+            const formattedTime = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+            timerDisplay.textContent = formattedTime;
+            document.title = `${formattedTime} - ${modes[currentMode].indicator}`;
+        }
+
+        // Starts the timer countdown
+        function startTimer() {
+            if (isRunning) return; // Prevent multiple intervals
+            isRunning = true;
+            // Ensure Tone.js is started by user interaction
+            Tone.start(); 
+            timerId = setInterval(() => {
+                timeRemaining--;
+                updateDisplay();
+                if (timeRemaining <= 0) {
+                    handleTimerEnd();
+                }
+            }, 1000);
+        }
+        
+        // Pauses the timer
+        function pauseTimer() {
+            clearInterval(timerId);
+            isRunning = false;
+        }
+
+        // Resets the timer to the current mode's default time
+        function resetTimer() {
+            pauseTimer();
+            timeRemaining = modes[currentMode].time;
+            updateDisplay();
+        }
+
+        // Switches between Pomodoro, Short Break, and Long Break modes
+        function switchMode(mode) {
+            pauseTimer();
+            currentMode = mode;
+            timeRemaining = modes[currentMode].time;
+            updateUIForMode(mode);
+            updateDisplay();
+        }
+
+        // Handles the logic when a timer completes
+        function handleTimerEnd() {
+            pauseTimer();
+            playNotificationSound();
+
+            if (currentMode === 'pomodoro') {
+                pomodoroCount++;
+                if (pomodoroCount % 4 === 0) {
+                    switchMode('longBreak');
+                } else {
+                    switchMode('shortBreak');
+                }
+            } else {
+                switchMode('pomodoro');
+            }
+            // Automatically start the next timer after a short delay
+            setTimeout(startTimer, 1000);
+        }
+
+        // --- UI and Sound ---
+
+        // Updates UI elements (colors, text) based on the current mode
+        function updateUIForMode(mode) {
+            // Update Body Background
+            appBody.className = `flex items-center justify-center min-h-screen transition-bg ${modes[mode].bodyColor}`;
+            
+            // Update Mode Indicator Text
+            modeIndicator.textContent = modes[mode].indicator;
+
+            // Update button styles
+            const allModeBtns = [pomodoroBtn, shortBreakBtn, longBreakBtn];
+            allModeBtns.forEach(btn => {
+                btn.classList.remove('bg-red-500', 'bg-blue-500', 'bg-green-500', 'text-white');
+            });
+
+            if (mode === 'pomodoro') {
+                pomodoroBtn.classList.add(modes.pomodoro.color, 'text-white');
+            } else if (mode === 'shortBreak') {
+                shortBreakBtn.classList.add(modes.shortBreak.color, 'text-white');
+            } else if (mode === 'longBreak') {
+                longBreakBtn.classList.add(modes.longBreak.color, 'text-white');
+            }
+        }
+
+        // Plays a simple sound using Tone.js
+        function playNotificationSound() {
+            const synth = new Tone.Synth().toDestination();
+            synth.triggerAttackRelease("C5", "8n");
+            setTimeout(() => synth.triggerAttackRelease("G5", "8n"), 200);
+        }
+
+        // --- Event Listeners ---
+        startBtn.addEventListener('click', startTimer);
+        pauseBtn.addEventListener('click', pauseTimer);
+        resetBtn.addEventListener('click', resetTimer);
+
+        pomodoroBtn.addEventListener('click', () => switchMode('pomodoro'));
+        shortBreakBtn.addEventListener('click', () => switchMode('shortBreak'));
+        longBreakBtn.addEventListener('click', () => switchMode('longBreak'));
+        
+        // --- Initial Setup ---
+        // Set the initial state when the page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            updateDisplay();
+            updateUIForMode('pomodoro');
+        });
+
+    </script>
+</body>
+</html>
