@@ -2,6 +2,8 @@
 
 A clean, modern, and easy-to-use Pomodoro timer web application built with HTML, Tailwind CSS, and vanilla JavaScript. This single-file application requires no installation or setup—just open it in your browser and start focusing\!
 
+[screenshot](screenshot.png)
+
 ## Features
 
   * **Three Timer Modes**: Standard **Pomodoro** (25 min), **Short Break** (5 min), and **Long Break** (15 min) to structure your work and rest periods.
