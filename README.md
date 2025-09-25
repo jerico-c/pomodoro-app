@@ -43,8 +43,3 @@ The entire application is contained within a single file for simplicity:
 └── pomodoro.html
 ```
 
------
-
-## License
-
-This project is open-source and available under the [MIT License](https://opensource.org/licenses/MIT).
