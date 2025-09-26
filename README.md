@@ -34,12 +34,4 @@ A clean, modern, and easy-to-use Pomodoro timer web application built with HTML,
 
 -----
 
-## File Structure
-
-The entire application is contained within a single file for simplicity:
-
-```
-.
-└── pomodoro.html
-```
 
